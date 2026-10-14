@@ -157,6 +157,78 @@ createBuilding('Main Library', 30, -30, 22, 28, 20, materials.building2);
 createBuilding('Student Centre', -32, 30, 25, 16, 22, materials.building3);
 createBuilding('Administration', 32, 30, 22, 22, 20, materials.building1);
 
+// ===== BUILDING DETAIL UPGRADE =====
+
+function addBuildingDetails(x, z, width, height, depth) {
+
+    // Rooftop structure
+    const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            width * 0.35,
+            1.2,
+            depth * 0.35
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x858b96
+        })
+    );
+
+    roof.position.set(
+        x,
+        height + 0.6,
+        z
+    );
+
+    roof.castShadow = true;
+    scene.add(roof);
+
+    // Main entrance
+    const door = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            2,
+            3,
+            0.18
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x49352a
+        })
+    );
+
+    door.position.set(
+        x,
+        1.5,
+        z + depth / 2 + 0.12
+    );
+
+    scene.add(door);
+
+    // Entrance canopy
+    const canopy = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            4,
+            0.3,
+            1.5
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x536b83
+        })
+    );
+
+    canopy.position.set(
+        x,
+        3.2,
+        z + depth / 2 + 0.7
+    );
+
+    canopy.castShadow = true;
+    scene.add(canopy);
+}
+
+// Add details to the four buildings
+addBuildingDetails(-30, -30, 24, 20, 20);
+addBuildingDetails(30, -30, 22, 28, 20);
+addBuildingDetails(-32, 30, 25, 16, 22);
+addBuildingDetails(32, 30, 22, 22, 20);
 // Football field
 const field = new THREE.Mesh(
     new THREE.BoxGeometry(48, 0.12, 30),
