@@ -286,42 +286,122 @@ for (let i = -70; i <= 70; i += 14) {
     createTree(i, 12, 0.8);
 }
 
-// Animated characters
+// ===== ANIMATED 3D CHARACTERS =====
+
 const people = [];
 
-function createPerson(x, z, material) {
+function createPerson(x, z, clothingMaterial) {
     const person = new THREE.Group();
 
+    const skinMaterial = new THREE.MeshStandardMaterial({
+        color: 0xd9a477,
+        roughness: 0.85
+    });
+
+    const pantsMaterial = new THREE.MeshStandardMaterial({
+        color: 0x26344b,
+        roughness: 0.9
+    });
+
+    // Torso
     const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.45, 0.55, 1.5, 8),
-        material
+        new THREE.CapsuleGeometry(0.48, 0.7, 4, 8),
+        clothingMaterial
     );
-    body.position.y = 1.2;
+    body.position.y = 1.65;
     body.castShadow = true;
     person.add(body);
 
+    // Head
     const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 12, 10),
-        new THREE.MeshStandardMaterial({ color: 0xe7b98a })
+        new THREE.SphereGeometry(0.38, 16, 12),
+        skinMaterial
     );
-    head.position.y = 2.25;
+    head.position.y = 2.65;
     head.castShadow = true;
     person.add(head);
+
+    // Hair
+    const hair = new THREE.Mesh(
+        new THREE.SphereGeometry(
+            0.39,
+            12,
+            8,
+            0,
+            Math.PI * 2,
+            0,
+            Math.PI / 2
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x30251f
+        })
+    );
+    hair.position.y = 2.78;
+    person.add(hair);
+
+    // Arms and legs
+    const limbs = [];
+
+    function makeLimb(length, radius, material, px, py, pz) {
+        const limb = new THREE.Mesh(
+            new THREE.CapsuleGeometry(radius, length, 3, 6),
+            material
+        );
+
+        limb.position.set(px, py, pz);
+        limb.castShadow = true;
+        person.add(limb);
+
+        return limb;
+    }
+
+    const leftArm = makeLimb(
+        0.65, 0.13, clothingMaterial,
+        -0.57, 1.65, 0
+    );
+
+    const rightArm = makeLimb(
+        0.65, 0.13, clothingMaterial,
+        0.57, 1.65, 0
+    );
+
+    const leftLeg = makeLimb(
+        0.65, 0.16, pantsMaterial,
+        -0.23, 0.55, 0
+    );
+
+    const rightLeg = makeLimb(
+        0.65, 0.16, pantsMaterial,
+        0.23, 0.55, 0
+    );
+
+    limbs.push(leftArm, rightArm, leftLeg, rightLeg);
 
     person.position.set(x, 0, z);
     scene.add(person);
 
     people.push({
         object: person,
+        limbs,
         startX: x,
         startZ: z,
         phase: Math.random() * Math.PI * 2
     });
 }
 
-for (let i = 0; i < 14; i++) {
-    createPerson(-8 + Math.random() * 16, -20 + Math.random() * 40, materials.blue);
-    createPerson(-20 + Math.random() * 40, -8 + Math.random() * 16, materials.red);
+// Create people in the campus
+for (let i = 0; i < 10; i++) {
+    createPerson(
+        -8 + Math.random() * 16,
+        -20 + Math.random() * 40,
+        materials.blue
+    );
+
+    createPerson(
+        -20 + Math.random() * 40,
+        -8 + Math.random() * 16,
+        materials.red
+    );
 }
 
 // Select buildings by tapping
@@ -401,11 +481,28 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-    people.forEach(person => {
+        people.forEach(person => {
+        const movement = time * 3 + person.phase;
+
         person.object.position.x =
             person.startX + Math.sin(time * 0.5 + person.phase) * 2;
+
         person.object.position.z =
             person.startZ + Math.cos(time * 0.4 + person.phase) * 2;
+
+        // Animate arms
+        person.limbs[0].rotation.z =
+            Math.sin(movement) * 0.35;
+
+        person.limbs[1].rotation.z =
+            -Math.sin(movement) * 0.35;
+
+        // Animate legs
+        person.limbs[2].rotation.z =
+            Math.sin(movement) * 0.25;
+
+        person.limbs[3].rotation.z =
+            -Math.sin(movement) * 0.25;
     });
 
     controls.update();
