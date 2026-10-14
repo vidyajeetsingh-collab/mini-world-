@@ -28,11 +28,25 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const controls = new OrbitControls(camera, renderer.domElement);
+
 controls.target.set(0, 0, 0);
+
 controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+
+controls.enableRotate = true;
+controls.enableZoom = true;
+controls.enablePan = true;
+
+controls.rotateSpeed = 0.7;
+controls.zoomSpeed = 0.8;
+controls.panSpeed = 0.7;
+
 controls.maxPolarAngle = Math.PI / 2.05;
-controls.minDistance = 15;
-controls.maxDistance = 150;
+controls.minDistance = 12;
+controls.maxDistance = 180;
+
+controls.screenSpacePanning = true;
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x526b40, 2));
 
