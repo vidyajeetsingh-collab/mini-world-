@@ -1,36 +1,65 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from
+    'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+import { OrbitControls } from
+    'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
+
+// ========================================
+// MINI VERSE 3D
+// Complete upgraded world
+// ========================================
 
 const canvas = document.getElementById('world');
 const loading = document.getElementById('loading');
 const info = document.getElementById('info');
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
-scene.fog = new THREE.Fog(0x87ceeb, 100, 280);
+if (!canvas) {
+    throw new Error('Canvas element #world was not found.');
+}
 
+// SCENE
+const scene = new THREE.Scene();
+
+const daySky = 0x87ceeb;
+const nightSky = 0x101a36;
+
+scene.background = new THREE.Color(daySky);
+scene.fog = new THREE.Fog(daySky, 150, 300);
+
+// CAMERA
 const camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
 );
-camera.position.set(55, 45, 65);
 
+camera.position.set(65, 55, 80);
+
+// RENDERER
 const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true
+    canvas: canvas,
+    antialias: true,
+    powerPreference: 'high-performance'
 });
+
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio || 1, 1.5)
+);
+
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-const controls = new OrbitControls(camera, renderer.domElement);
+// CAMERA CONTROLS
+const controls = new OrbitControls(
+    camera,
+    renderer.domElement
+);
 
 controls.target.set(0, 0, 0);
-
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 
@@ -42,84 +71,275 @@ controls.rotateSpeed = 0.7;
 controls.zoomSpeed = 0.8;
 controls.panSpeed = 0.7;
 
-controls.maxPolarAngle = Math.PI / 2.05;
 controls.minDistance = 12;
-controls.maxDistance = 180;
-
+controls.maxDistance = 190;
+controls.maxPolarAngle = Math.PI / 2.05;
 controls.screenSpacePanning = true;
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x526b40, 2));
+// ========================================
+// LIGHTING
+// ========================================
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-sun.position.set(40, 80, 30);
+const ambientLight = new THREE.HemisphereLight(
+    0xffffff,
+    0x58704b,
+    1.8
+);
+
+scene.add(ambientLight);
+
+const sun = new THREE.DirectionalLight(
+    0xffffff,
+    2.2
+);
+
+sun.position.set(50, 90, 40);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -120;
+sun.shadow.camera.right = 120;
+sun.shadow.camera.top = 120;
+sun.shadow.camera.bottom = -120;
+
 scene.add(sun);
 
-// Materials
-const materials = {
-    grass: new THREE.MeshStandardMaterial({ color: 0x5ca34b }),
-    road: new THREE.MeshStandardMaterial({ color: 0x353b42 }),
-    line: new THREE.MeshStandardMaterial({ color: 0xffffff }),
-    building1: new THREE.MeshStandardMaterial({ color: 0xe6d8b8 }),
-    building2: new THREE.MeshStandardMaterial({ color: 0xd2dce5 }),
-    building3: new THREE.MeshStandardMaterial({ color: 0xe4b78a }),
-    glass: new THREE.MeshStandardMaterial({
-        color: 0x70c7e8,
+const moonLight = new THREE.DirectionalLight(
+    0x9bbcff,
+    0
+);
+
+moonLight.position.set(-40, 60, -30);
+scene.add(moonLight);
+
+// ========================================
+// MATERIALS
+// ========================================
+
+function makeMaterial(color, extra = {}) {
+    return new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.85,
+        ...extra
+    });
+}
+
+const mat = {
+    grass: makeMaterial(0x5ca34b),
+    grassDark: makeMaterial(0x41813a),
+
+    road: makeMaterial(0x343b45),
+    sidewalk: makeMaterial(0xb9b9b1),
+    roadLine: makeMaterial(0xffffff),
+
+    building1: makeMaterial(0xe6d8b8),
+    building2: makeMaterial(0xd2dce5),
+    building3: makeMaterial(0xe4b78a),
+
+    glass: makeMaterial(0x70c7e8, {
         metalness: 0.25,
-        roughness: 0.25
+        roughness: 0.3
     }),
-    trunk: new THREE.MeshStandardMaterial({ color: 0x704323 }),
-    leaves: new THREE.MeshStandardMaterial({ color: 0x238448 }),
-    white: new THREE.MeshStandardMaterial({ color: 0xffffff }),
-    red: new THREE.MeshStandardMaterial({ color: 0xd9473f }),
-    blue: new THREE.MeshStandardMaterial({ color: 0x2869cf }),
-    yellow: new THREE.MeshStandardMaterial({ color: 0xf5ca42 })
+
+    door: makeMaterial(0x49352a),
+    roof: makeMaterial(0x858b96),
+
+    trunk: makeMaterial(0x704323),
+    leaves: makeMaterial(0x238448),
+
+    white: makeMaterial(0xffffff),
+    red: makeMaterial(0xd9473f),
+    blue: makeMaterial(0x2869cf),
+    yellow: makeMaterial(0xf5ca42),
+
+    pants: makeMaterial(0x26344b),
+    skin: makeMaterial(0xd9a477)
 };
 
-function addBox(name, x, y, z, width, height, depth, material, shadow = true) {
+// ========================================
+// GENERAL 3D OBJECT CREATOR
+// ========================================
+
+function addBox(
+    name,
+    x,
+    y,
+    z,
+    width,
+    height,
+    depth,
+    material,
+    shadows = true
+) {
     const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(width, height, depth),
         material
     );
+
     mesh.name = name;
-    mesh.position.set(x, y + height / 2, z);
-    mesh.castShadow = shadow;
+
+    // y represents the bottom of the object
+    mesh.position.set(
+        x,
+        y + height / 2,
+        z
+    );
+
+    mesh.castShadow = shadows;
     mesh.receiveShadow = true;
+
     scene.add(mesh);
+
     return mesh;
 }
 
-// Ground
-addBox('Ground', 0, -1, 0, 220, 1, 220, materials.grass, false);
+// ========================================
+// GROUND
+// ========================================
 
-// Roads
-addBox('Main Road', 0, 0.02, 0, 13, 0.08, 220, materials.road, false);
-addBox('Cross Road', 0, 0.03, 0, 220, 0.08, 13, materials.road, false);
+addBox(
+    'Green World',
+    0, -1, 0,
+    220, 1, 220,
+    mat.grass,
+    false
+);
+
+// Decorative green sections
+addBox(
+    'Western Park',
+    -65, 0.01, 0,
+    20, 0.05, 100,
+    mat.grassDark,
+    false
+);
+
+addBox(
+    'Eastern Park',
+    65, 0.01, 0,
+    20, 0.05, 100,
+    mat.grassDark,
+    false
+);
+
+// ========================================
+// ROADS AND SIDEWALKS
+// ========================================
+
+// Main roads
+addBox(
+    'North South Road',
+    0, 0.02, 0,
+    13, 0.08, 220,
+    mat.road,
+    false
+);
+
+addBox(
+    'East West Road',
+    0, 0.03, 0,
+    220, 0.08, 13,
+    mat.road,
+    false
+);
+
+// Sidewalks along the main roads
+addBox(
+    'Roadside West',
+    -8, 0.02, 0,
+    2, 0.1, 220,
+    mat.sidewalk,
+    false
+);
+
+addBox(
+    'Roadside East',
+    8, 0.02, 0,
+    2, 0.1, 220,
+    mat.sidewalk,
+    false
+);
+
+addBox(
+    'Roadside North',
+    0, 0.02, -8,
+    220, 0.1, 2,
+    mat.sidewalk,
+    false
+);
+
+addBox(
+    'Roadside South',
+    0, 0.02, 8,
+    220, 0.1, 2,
+    mat.sidewalk,
+    false
+);
 
 // Road markings
 for (let z = -100; z <= 100; z += 10) {
-    addBox('Road marking', 0, 0.09, z, 0.25, 0.02, 4, materials.line, false);
+    addBox(
+        'Road Marking',
+        0, 0.08, z,
+        0.22, 0.02, 4,
+        mat.roadLine,
+        false
+    );
 }
+
 for (let x = -100; x <= 100; x += 10) {
-    addBox('Road marking', x, 0.10, 0, 4, 0.02, 0.25, materials.line, false);
+    addBox(
+        'Road Marking',
+        x, 0.09, 0,
+        4, 0.02, 0.22,
+        mat.roadLine,
+        false
+    );
 }
 
-// Buildings with windows
-function createBuilding(name, x, z, width, height, depth, material) {
-    const building = addBox(name, x, 0, z, width, height, depth, material);
-    building.userData.description =
-        `${name} — ${Math.max(1, Math.round(height / 4))} floors`;
+// ========================================
+// BUILDINGS
+// ========================================
 
-    // Front-facing windows
+const buildings = [];
+
+function createBuilding(
+    name,
+    x,
+    z,
+    width,
+    height,
+    depth,
+    material
+) {
+    const building = addBox(
+        name,
+        x, 0, z,
+        width, height, depth,
+        material
+    );
+
+    building.userData.description =
+        name + ' — ' +
+        Math.max(1, Math.round(height / 4)) +
+        ' floors';
+
+    buildings.push(building);
+
+    // Front windows
     const floors = Math.floor(height / 4);
-    const columns = Math.max(2, Math.floor(width / 3));
+    const columns = Math.max(
+        2,
+        Math.floor(width / 3)
+    );
 
     for (let floor = 0; floor < floors; floor++) {
         for (let col = 0; col < columns; col++) {
-            const wx = x - width / 2 + (col + 0.5) * width / columns;
+            const wx =
+                x - width / 2 +
+                (col + 0.5) * width / columns;
+
             const wy = 1.2 + floor * 4;
-            const wz = z + depth / 2 + 0.04;
 
             const windowMesh = new THREE.Mesh(
                 new THREE.BoxGeometry(
@@ -127,9 +347,15 @@ function createBuilding(name, x, z, width, height, depth, material) {
                     1.5,
                     0.08
                 ),
-                materials.glass
+                mat.glass
             );
-            windowMesh.position.set(wx, wy, wz);
+
+            windowMesh.position.set(
+                wx,
+                wy,
+                z + depth / 2 + 0.05
+            );
+
             scene.add(windowMesh);
         }
     }
@@ -137,194 +363,244 @@ function createBuilding(name, x, z, width, height, depth, material) {
     // Side windows
     for (let floor = 0; floor < floors; floor++) {
         for (let col = 0; col < 3; col++) {
-            const wz = z - depth / 2 + (col + 0.5) * depth / 3;
+            const wz =
+                z - depth / 2 +
+                (col + 0.5) * depth / 3;
+
             const wy = 1.2 + floor * 4;
 
             const windowMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(0.08, 1.5, 1.2),
-                materials.glass
+                new THREE.BoxGeometry(
+                    0.08,
+                    1.5,
+                    1.2
+                ),
+                mat.glass
             );
-            windowMesh.position.set(x + width / 2 + 0.04, wy, wz);
+
+            windowMesh.position.set(
+                x + width / 2 + 0.05,
+                wy,
+                wz
+            );
+
             scene.add(windowMesh);
         }
     }
 
+    // Rooftop structure
+    addBox(
+        name + ' Rooftop',
+        x,
+        height,
+        z,
+        width * 0.35,
+        1.2,
+        depth * 0.35,
+        mat.roof
+    );
+
+    // Entrance door
+    addBox(
+        name + ' Entrance',
+        x,
+        0,
+        z + depth / 2 + 0.12,
+        2,
+        3,
+        0.18,
+        mat.door
+    );
+
+    // Entrance canopy
+    addBox(
+        name + ' Canopy',
+        x,
+        3.05,
+        z + depth / 2 + 0.7,
+        4,
+        0.3,
+        1.5,
+        mat.roof
+    );
+
     return building;
 }
 
-createBuilding('Science Block', -30, -30, 24, 20, 20, materials.building1);
-createBuilding('Main Library', 30, -30, 22, 28, 20, materials.building2);
-createBuilding('Student Centre', -32, 30, 25, 16, 22, materials.building3);
-createBuilding('Administration', 32, 30, 22, 22, 20, materials.building1);
-
-// ===== BUILDING DETAIL UPGRADE =====
-
-function addBuildingDetails(x, z, width, height, depth) {
-
-    // Rooftop structure
-    const roof = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            width * 0.35,
-            1.2,
-            depth * 0.35
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x858b96
-        })
-    );
-
-    roof.position.set(
-        x,
-        height + 0.6,
-        z
-    );
-
-    roof.castShadow = true;
-    scene.add(roof);
-
-    // Main entrance
-    const door = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            2,
-            3,
-            0.18
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x49352a
-        })
-    );
-
-    door.position.set(
-        x,
-        1.5,
-        z + depth / 2 + 0.12
-    );
-
-    scene.add(door);
-
-    // Entrance canopy
-    const canopy = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            4,
-            0.3,
-            1.5
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x536b83
-        })
-    );
-
-    canopy.position.set(
-        x,
-        3.2,
-        z + depth / 2 + 0.7
-    );
-
-    canopy.castShadow = true;
-    scene.add(canopy);
-}
-
-// Add details to the four buildings
-addBuildingDetails(-30, -30, 24, 20, 20);
-addBuildingDetails(30, -30, 22, 28, 20);
-addBuildingDetails(-32, 30, 25, 16, 22);
-addBuildingDetails(32, 30, 22, 22, 20);
-// Football field
-const field = new THREE.Mesh(
-    new THREE.BoxGeometry(48, 0.12, 30),
-    new THREE.MeshStandardMaterial({ color: 0x328747 })
+// Four main buildings
+createBuilding(
+    'Science Block',
+    -30, -30,
+    24, 20, 20,
+    mat.building1
 );
-field.position.set(68, 0, -40);
-field.receiveShadow = true;
-scene.add(field);
 
-// Field boundary
+createBuilding(
+    'Main Library',
+    30, -30,
+    22, 28, 20,
+    mat.building2
+);
+
+createBuilding(
+    'Student Centre',
+    -32, 30,
+    25, 16, 22,
+    mat.building3
+);
+
+createBuilding(
+    'Administration',
+    32, 30,
+    22, 22, 20,
+    mat.building1
+);
+
+// ========================================
+// FOOTBALL FIELD
+// ========================================
+
+const field = addBox(
+    'Football Field',
+    68, 0.02, -40,
+    48, 0.12, 30,
+    makeMaterial(0x328747),
+    false
+);
+
 function fieldLine(x, z, width, depth) {
-    const line = new THREE.Mesh(
-        new THREE.BoxGeometry(width, 0.04, depth),
-        materials.white
+    addBox(
+        'Field Boundary',
+        x, 0.15, z,
+        width, 0.04, depth,
+        mat.white,
+        false
     );
-    line.position.set(x, 0.09, z);
-    scene.add(line);
 }
+
 fieldLine(68, -55, 48, 0.15);
 fieldLine(68, -25, 48, 0.15);
 fieldLine(44, -40, 0.15, 30);
 fieldLine(92, -40, 0.15, 30);
 fieldLine(68, -40, 0.15, 30);
 
-// Trees
+// ========================================
+// TREES
+// ========================================
+
 function createTree(x, z, scale = 1) {
     const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.35 * scale, 0.5 * scale, 3 * scale, 8),
-        materials.trunk
+        new THREE.CylinderGeometry(
+            0.3 * scale,
+            0.45 * scale,
+            3 * scale,
+            8
+        ),
+        mat.trunk
     );
-    trunk.position.set(x, 1.5 * scale, z);
+
+    trunk.position.set(
+        x,
+        1.5 * scale,
+        z
+    );
+
     trunk.castShadow = true;
     scene.add(trunk);
 
     const crown = new THREE.Mesh(
-        new THREE.SphereGeometry(2 * scale, 10, 8),
-        materials.leaves
+        new THREE.SphereGeometry(
+            2 * scale,
+            10,
+            8
+        ),
+        mat.leaves
     );
-    crown.position.set(x, 4 * scale, z);
+
+    crown.position.set(
+        x,
+        4 * scale,
+        z
+    );
+
     crown.castShadow = true;
     scene.add(crown);
 }
 
+// Boundary trees
 for (let i = -90; i <= 90; i += 12) {
-    createTree(i, -90, 1.1);
-    createTree(i, 90, 1.1);
+    createTree(i, -100, 1.1);
+    createTree(i, 100, 1.1);
+
     if (Math.abs(i) > 12) {
-        createTree(-90, i, 1);
-        createTree(90, i, 1);
+        createTree(-100, i, 1);
+        createTree(100, i, 1);
     }
 }
 
+// Trees alongside the road
 for (let i = -70; i <= 70; i += 14) {
-    createTree(i, -12, 0.8);
-    createTree(i, 12, 0.8);
+    createTree(i, -13, 0.8);
+    createTree(i, 13, 0.8);
 }
 
-// ===== ANIMATED 3D CHARACTERS =====
+// Additional park trees
+for (let i = 0; i < 12; i++) {
+    createTree(
+        -78 + Math.random() * 12,
+        -40 + Math.random() * 80,
+        0.8 + Math.random() * 0.4
+    );
+
+    createTree(
+        66 + Math.random() * 12,
+        -10 + Math.random() * 80,
+        0.8 + Math.random() * 0.4
+    );
+}
+
+// ========================================
+// 3D HUMAN CHARACTERS
+// ========================================
 
 const people = [];
 
 function createPerson(x, z, clothingMaterial) {
     const person = new THREE.Group();
 
-    const skinMaterial = new THREE.MeshStandardMaterial({
-        color: 0xd9a477,
-        roughness: 0.85
-    });
-
-    const pantsMaterial = new THREE.MeshStandardMaterial({
-        color: 0x26344b,
-        roughness: 0.9
-    });
-
-    // Torso
+    // Body
     const body = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.48, 0.7, 4, 8),
+        new THREE.CapsuleGeometry(
+            0.38,
+            0.7,
+            4,
+            8
+        ),
         clothingMaterial
     );
-    body.position.y = 1.65;
+
+    body.position.y = 1.55;
     body.castShadow = true;
     person.add(body);
 
     // Head
     const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.38, 16, 12),
-        skinMaterial
+        new THREE.SphereGeometry(
+            0.36,
+            12,
+            10
+        ),
+        mat.skin
     );
-    head.position.y = 2.65;
+
+    head.position.y = 2.5;
     head.castShadow = true;
     person.add(head);
 
     // Hair
     const hair = new THREE.Mesh(
         new THREE.SphereGeometry(
-            0.39,
+            0.37,
             12,
             8,
             0,
@@ -332,23 +608,36 @@ function createPerson(x, z, clothingMaterial) {
             0,
             Math.PI / 2
         ),
-        new THREE.MeshStandardMaterial({
-            color: 0x30251f
-        })
+        makeMaterial(0x30251f)
     );
-    hair.position.y = 2.78;
+
+    hair.position.y = 2.62;
     person.add(hair);
 
-    // Arms and legs
-    const limbs = [];
-
-    function makeLimb(length, radius, material, px, py, pz) {
+    // Limbs
+    function makeLimb(
+        length,
+        radius,
+        material,
+        xPos,
+        yPos
+    ) {
         const limb = new THREE.Mesh(
-            new THREE.CapsuleGeometry(radius, length, 3, 6),
+            new THREE.CapsuleGeometry(
+                radius,
+                length,
+                3,
+                6
+            ),
             material
         );
 
-        limb.position.set(px, py, pz);
+        limb.position.set(
+            xPos,
+            yPos,
+            0
+        );
+
         limb.castShadow = true;
         person.add(limb);
 
@@ -356,123 +645,202 @@ function createPerson(x, z, clothingMaterial) {
     }
 
     const leftArm = makeLimb(
-        0.65, 0.13, clothingMaterial,
-        -0.57, 1.65, 0
+        0.55, 0.12,
+        clothingMaterial,
+        -0.48, 1.55
     );
 
     const rightArm = makeLimb(
-        0.65, 0.13, clothingMaterial,
-        0.57, 1.65, 0
+        0.55, 0.12,
+        clothingMaterial,
+        0.48, 1.55
     );
 
     const leftLeg = makeLimb(
-        0.65, 0.16, pantsMaterial,
-        -0.23, 0.55, 0
+        0.55, 0.14,
+        mat.pants,
+        -0.2, 0.52
     );
 
     const rightLeg = makeLimb(
-        0.65, 0.16, pantsMaterial,
-        0.23, 0.55, 0
+        0.55, 0.14,
+        mat.pants,
+        0.2, 0.52
     );
-
-    limbs.push(leftArm, rightArm, leftLeg, rightLeg);
 
     person.position.set(x, 0, z);
     scene.add(person);
 
     people.push({
         object: person,
-        limbs,
+        limbs: [
+            leftArm,
+            rightArm,
+            leftLeg,
+            rightLeg
+        ],
         startX: x,
         startZ: z,
         phase: Math.random() * Math.PI * 2
     });
 }
 
-// Create people in the campus
+// Create people around the campus
 for (let i = 0; i < 10; i++) {
     createPerson(
         -8 + Math.random() * 16,
         -20 + Math.random() * 40,
-        materials.blue
+        mat.blue
     );
 
     createPerson(
         -20 + Math.random() * 40,
         -8 + Math.random() * 16,
-        materials.red
+        mat.red
     );
 }
 
-// Select buildings by tapping
+// ========================================
+// BUILDING INTERACTION
+// ========================================
+
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
-renderer.domElement.addEventListener('pointerdown', (event) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+renderer.domElement.addEventListener(
+    'pointerdown',
+    event => {
+        pointer.x =
+            (event.clientX / window.innerWidth) * 2 - 1;
 
-    raycaster.setFromCamera(pointer, camera);
+        pointer.y =
+            -(event.clientY / window.innerHeight) * 2 + 1;
 
-    const hits = raycaster.intersectObjects(scene.children, false);
-    const building = hits.find(hit =>
-        hit.object.userData.description
-    );
+        raycaster.setFromCamera(
+            pointer,
+            camera
+        );
 
-    if (building) {
-        info.textContent = building.object.userData.description;
-        info.style.display = 'block';
+        const hits = raycaster.intersectObjects(
+            buildings,
+            false
+        );
+
+        if (hits.length > 0) {
+            info.textContent =
+                hits[0].object.userData.description;
+
+            info.style.display = 'block';
+        }
     }
-});
+);
 
-// Rotate camera around the world
-let autoRotate = false;
+// ========================================
+// DAY / NIGHT MODE
+// ========================================
+
 let nightMode = false;
 
-document.getElementById('rotate').addEventListener('click', () => {
-    autoRotate = !autoRotate;
-    controls.autoRotate = autoRotate;
-    controls.autoRotateSpeed = 1.2;
-});
+document.getElementById('dayNight')
+    .addEventListener('click', () => {
 
-document.getElementById('zoomIn').addEventListener('click', () => {
-    camera.position.sub(controls.target).multiplyScalar(0.85).add(controls.target);
-});
+        nightMode = !nightMode;
 
-document.getElementById('zoomOut').addEventListener('click', () => {
-    camera.position.sub(controls.target).multiplyScalar(1.18).add(controls.target);
-});
+        if (nightMode) {
+            scene.background.set(nightSky);
+            scene.fog.color.set(nightSky);
 
-document.getElementById('dayNight').addEventListener('click', () => {
-    nightMode = !nightMode;
+            sun.intensity = 0.25;
+            ambientLight.intensity = 0.4;
+            moonLight.intensity = 0.8;
 
-    if (nightMode) {
-        scene.background.set(0x101a36);
-        scene.fog.color.set(0x101a36);
-        sun.intensity = 0.45;
-        document.getElementById('dayNight').textContent = '☀ DAY';
-    } else {
-        scene.background.set(0x87ceeb);
-        scene.fog.color.set(0x87ceeb);
-        sun.intensity = 2.5;
-        document.getElementById('dayNight').textContent = '☾ NIGHT';
-    }
-});
+            document.getElementById('dayNight')
+                .textContent = '☀ DAY';
 
-document.getElementById('reset').addEventListener('click', () => {
-    camera.position.set(55, 45, 65);
-    controls.target.set(0, 0, 0);
-    controls.autoRotate = false;
-    autoRotate = false;
-    controls.update();
-    info.style.display = 'none';
-});
+        } else {
+            scene.background.set(daySky);
+            scene.fog.color.set(daySky);
+
+            sun.intensity = 2.2;
+            ambientLight.intensity = 1.8;
+            moonLight.intensity = 0;
+
+            document.getElementById('dayNight')
+                .textContent = '☾ NIGHT';
+        }
+    });
+
+// ========================================
+// CAMERA BUTTONS
+// ========================================
+
+let autoRotate = false;
+
+document.getElementById('rotate')
+    .addEventListener('click', () => {
+
+        autoRotate = !autoRotate;
+
+        controls.autoRotate = autoRotate;
+        controls.autoRotateSpeed = 1.2;
+    });
+
+document.getElementById('zoomIn')
+    .addEventListener('click', () => {
+
+        camera.position
+            .sub(controls.target)
+            .multiplyScalar(0.85)
+            .add(controls.target);
+    });
+
+document.getElementById('zoomOut')
+    .addEventListener('click', () => {
+
+        camera.position
+            .sub(controls.target)
+            .multiplyScalar(1.18)
+            .add(controls.target);
+    });
+
+document.getElementById('reset')
+    .addEventListener('click', () => {
+
+        camera.position.set(65, 55, 80);
+
+        controls.target.set(0, 0, 0);
+
+        controls.autoRotate = false;
+        autoRotate = false;
+
+        controls.update();
+
+        info.style.display = 'none';
+    });
+
+// ========================================
+// RESIZE SUPPORT
+// ========================================
 
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect =
+        window.innerWidth / window.innerHeight;
+
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio || 1, 1.5)
+    );
 });
+
+// ========================================
+// ANIMATION
+// ========================================
 
 const clock = new THREE.Clock();
 
@@ -481,23 +849,25 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-        people.forEach(person => {
-        const movement = time * 3 + person.phase;
+    // Move people and animate their limbs
+    people.forEach(person => {
+        const movement =
+            time * 3 + person.phase;
 
         person.object.position.x =
-            person.startX + Math.sin(time * 0.5 + person.phase) * 2;
+            person.startX +
+            Math.sin(time * 0.5 + person.phase) * 2;
 
         person.object.position.z =
-            person.startZ + Math.cos(time * 0.4 + person.phase) * 2;
+            person.startZ +
+            Math.cos(time * 0.4 + person.phase) * 2;
 
-        // Animate arms
         person.limbs[0].rotation.z =
             Math.sin(movement) * 0.35;
 
         person.limbs[1].rotation.z =
             -Math.sin(movement) * 0.35;
 
-        // Animate legs
         person.limbs[2].rotation.z =
             Math.sin(movement) * 0.25;
 
@@ -506,8 +876,18 @@ function animate() {
     });
 
     controls.update();
-    renderer.render(scene, camera);
+
+    renderer.render(
+        scene,
+        camera
+    );
 }
 
+// Start the world
 animate();
-loading.style.display = 'none';
+
+if (loading) {
+    loading.style.display = 'none';
+}
+
+console.log('MINI VERSE 3D initialized successfully.');
