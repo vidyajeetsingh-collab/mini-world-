@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Mini Verse 3D</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #9bcce5;
+}
+
+#world {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.hud {
+    position: fixed;
+    top: 18px;
+    left: 16px;
+    z-index: 5;
+    color: white;
+    background: rgba(12, 27, 39, .83);
+    padding: 15px 18px;
+    border-radius: 14px;
+    box-shadow: 0 5px 25px #0003;
+}
+
+.hud h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+}
+
+.hud p {
+    margin: 0;
+    font-size: 12px;
+    color: #b9d8e8;
+}
+
+.controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 9px;
+    z-index: 5;
+    width: max-content;
+    max-width: 96%;
+}
+
+button {
+    border: 1px solid #ffffff55;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: rgba(13, 32, 44, .9);
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+button:active {
+    background: #267f9c;
+}
+
+#info {
+    position: fixed;
+    right: 14px;
+    top: 18px;
+    z-index: 5;
+    color: white;
+    background: #102633dd;
+    padding: 12px;
+    border-radius: 12px;
+    max-width: 145px;
+    font-size: 12px;
+    display: none;
+}
+
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    background: #9bcce5;
+    color: #173747;
+    font-weight: bold;
+}
+
+@media (max-width: 480px) {
+    .hud {
+        top: 10px;
+        left: 10px;
+        padding: 12px;
+    }
+
+    .hud h2 {
+        font-size: 16px;
+    }
+
+    button {
+        padding: 11px 10px;
+        font-size: 11px;
+    }
+
+    .controls {
+        bottom: 12px;
+        gap: 5px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">Building your 3D world...</div>
+
+<div class="hud">
+    <h2>🌍 MINI VERSE</h2>
+    <p>INTERACTIVE 3D WORLD</p>
+</div>
+
+<div id="info"></div>
+
+<div class="controls">
+    <button id="rotate">⟳ ROTATE</button>
+    <button id="zoomIn">＋ ZOOM</button>
+    <button id="zoomOut">－ ZOOM</button>
+    <button id="dayNight">☾ NIGHT</button>
+    <button id="reset">↺ RESET</button>
+</div>
+
+<canvas id="world"></canvas>
+
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+import { OrbitControls } from
+'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
+
+const canvas = document.getElementById('world');
+const loading = document.getElementById('loading');
+const info = document.getElementById('info');
+
+let scene, camera, renderer, controls;
+let night = false;
+let rotating = false;
+
+const clickable = [];
+const animated = [];
+
+function material(color) {
+    return new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.85
+    });
+}
+
+function box(name, x, y, z, w, h, d, color) {
+    const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        material(color)
+    );
+
+    mesh.name = name;
+    mesh.position.set(x, y + h / 2, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    scene.add(mesh);
+    return mesh;
+}
+
+function cylinder(x, y, z, radius, height, color) {
+    const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            radius * 0.8, radius, height, 10
+        ),
+        material(color)
+    );
+
+    mesh.position.set(x, y + height / 2, z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    return mesh;
+}
+
+function createTree(x, z) {
+    cylinder(x, 0, z, 0.13, 1.1, 0x795239);
+
+    const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(0.65, 10, 8),
+        material(0x27834a)
+    );
+
+    leaves.position.set(x, 1.45, z);
+    leaves.scale.set(1, 1.25, 1);
+    leaves.castShadow = true;
+    scene.add(leaves);
+}
+
+function createBuilding(name, x, z, w, h, d, color) {
+    const building = box(
+        name, x, 0, z, w, h, d, color
+    );
+
+    clickable.push(building);
+
+    // Repeating windows on the front.
+    const rows = Math.max(2, Math.floor(h / 1.2));
+    const cols = Math.max(2, Math.floor(w / 1.1));
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const wx = x - w / 2 +
+                (col + 0.5) * w / cols;
+
+            const wy = 0.45 +
+                (row + 0.5) * (h - 0.6) / rows;
+
+            const windowMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    Math.min(0.48, w / cols * 0.5),
+                    0.45,
+                    0.035
+                ),
+                new THREE.MeshStandardMaterial({
+                    color: 0x8dd9e8,
+                    emissive: 0x183d49,
+                    roughness: 0.25
+                })
+            );
+
+            windowMesh.position.set(
+                wx, wy, z + d / 2 + 0.025
+            );
+
+            scene.add(windowMesh);
+        }
+    }
+
+    return building;
+}
+
+function createPerson(x, z, color) {
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            0.14, 0.18, 0.65, 8
+        ),
+        material(color)
+    );
+
+    body.position.y = 0.95;
+    group.add(body);
+
+    const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 10, 8),
+        material(0xe9b68c)
+    );
+
+    head.position.y = 1.4;
+    group.add(head);
+
+    group.position.set(x, 0, z);
+    scene.add(group);
+
+    animated.push({
+        object: group,
+        originX: x,
+        originZ: z,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+function createWorld() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9bcce5);
+    scene.fog = new THREE.Fog(0x9bcce5, 55, 125);
+
+    camera = new THREE.PerspectiveCamera(
+        55,
+        innerWidth / innerHeight,
+        0.1,
+        250
+    );
+
+    camera.position.set(22, 23, 28);
+
+    renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        powerPreference: 'default'
+    });
+
+    renderer.setPixelRatio(
+        Math.min(devicePixelRatio, 1.5)
+    );
+
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.minDistance = 8;
+    controls.maxDistance = 75;
+    controls.target.set(0, 0, 0);
+
+    // Lighting.
+    scene.add(new THREE.HemisphereLight(
+        0xe0f4ff, 0x526d40, 2
+    ));
+
+    const sun = new THREE.DirectionalLight(0xfff0d5, 3);
+    sun.position.set(-15, 30, 20);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    scene.add(sun);
+
+    // Green ground.
+    const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(120, 120),
+        material(0x71a85d)
+    );
+
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.03;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Main roads.
+    box('Main road', 0, 0, 0, 7, 0.06, 90, 0x454d52);
+    box('Cross road', 0, 0, 0, 90, 0.06, 6, 0x454d52);
+
+    // Road markings.
+    for (let z = -42; z <= 42; z += 5) {
+        box('Road marking', 0, 0.04, z, 0.13, 0.025, 2.2, 0xf4e9b1);
+    }
+
+    for (let x = -42; x <= 42; x += 5) {
+        box('Road marking', x, 0.04, 0, 2.2, 0.025, 0.13, 0xf4e9b1);
+    }
+
+    // Campus buildings.
+    createBuilding(
+        'ADMINISTRATION BUILDING',
+        -13, -13, 10, 8, 8, 0xd8c5a7
+    );
+
+    createBuilding(
+        'SCIENCE BUILDING',
+        13, -14, 11, 12, 9, 0xc8d5dc
+    );
+
+    createBuilding(
+        'LIBRARY',
+        -14, 13, 10, 7, 9, 0xe4d4b8
+    );
+
+    createBuilding(
+        'STUDENT CENTRE',
+        14, 14, 11, 9, 9, 0xd6c5dd
+    );
+
+    // Sports field.
+    box(
+        'Football field',
+        0, 0.03, 29, 19, 0.08, 12, 0x27854b
+    );
+
+    // White boundary lines.
+    box(
+        'Field boundary',
+        0, 0.09, 23, 18.5, 0.025, 0.08, 0xffffff
+    );
+
+    box(
+        'Field boundary',
+        0, 0.09, 35, 18.5, 0.025, 0.08, 0xffffff
+    );
+
+    box(
+        'Field boundary',
+        -9.25, 0.09, 29, 0.08, 0.025, 12, 0xffffff
+    );
+
+    box(
+        'Field boundary',
+        9.25, 0.09, 29, 0.08, 0.025, 12, 0xffffff
+    );
+
+    // Trees around the campus.
+    for (let i = -4; i <= 4; i++) {
+        createTree(i * 5, -25);
+        createTree(i * 5, 21);
+    }
+
+    for (let i = -3; i <= 3; i++) {
+        createTree(-24, i * 6);
+        createTree(24, i * 6);
+    }
+
+    // Simple animated people.
+    createPerson(-4.5, -5, 0xe74c3c);
+    createPerson(5, 5, 0x2980b9);
+    createPerson(-9, 4, 0xf1c40f);
+    createPerson(8, -7, 0x8e44ad);
+
+    // Tap / click to inspect buildings.
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    renderer.domElement.addEventListener(
+        'pointerdown', event => {
+            pointer.x = (
+                event.clientX / innerWidth
+            ) * 2 - 1;
+
+            pointer.y = -(
+                event.clientY / innerHeight
+            ) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+
+            const hits = raycaster.intersectObjects(
+                clickable, false
+            );
+
+            if (hits.length) {
+                info.style.display = 'block';
+                info.textContent =
+                    '🏢 ' + hits[0].object.name;
+            }
+        }
+    );
+
+    loading.style.display = 'none';
+
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = performance.now() * 0.0005;
+
+    if (rotating) {
+        camera.position.applyAxisAngle(
+            new THREE.Vector3(0, 1, 0),
+            0.002
+        );
+    }
+
+    animated.forEach(person => {
+        person.object.position.x =
+            person.originX +
+            Math.sin(time + person.phase) * 0.8;
+
+        person.object.position.z =
+            person.originZ +
+            Math.cos(time + person.phase) * 0.8;
+    });
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Controls.
+document.getElementById('rotate').onclick = () => {
+    rotating = !rotating;
+};
+
+document.getElementById('zoomIn').onclick = () => {
+    camera.position.multiplyScalar(0.85);
+};
+
+document.getElementById('zoomOut').onclick = () => {
+    camera.position.multiplyScalar(1.15);
+};
+
+document.getElementById('dayNight').onclick = () => {
+    night = !night;
+
+    scene.background.set(
+        night ? 0x101b35 : 0x9bcce5
+    );
+
+    scene.fog.color.set(
+        night ? 0x101b35 : 0x9bcce5
+    );
+
+    document.getElementById('dayNight').textContent =
+        night ? '☀ DAY' : '☾ NIGHT';
+};
+
+document.getElementById('reset').onclick = () => {
+    camera.position.set(22, 23, 28);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    info.style.display = 'none';
+};
+
+window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(innerWidth, innerHeight);
+});
+
+try {
+    createWorld();
+} catch (error) {
+    loading.textContent =
+        'Could not load the 3D world. Check your internet connection and browser support.';
+    console.error(error);
+}
+</script>
+
+</body>
+</html>
