@@ -10,7 +10,7 @@ body {
     height: 100%;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    background: #9bcce5;
+    background: #87ceeb;
 }
 
 #world {
@@ -22,119 +22,102 @@ body {
 
 .hud {
     position: fixed;
-    top: 18px;
-    left: 16px;
-    z-index: 5;
-    padding: 15px 18px;
+    top: 16px;
+    left: 14px;
+    z-index: 10;
+    padding: 13px 16px;
     color: white;
-    background: rgba(12, 27, 39, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(10, 20, 35, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 14px;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
 }
 
 .hud h2 {
-    margin-bottom: 6px;
-    font-size: 19px;
+    font-size: 20px;
     letter-spacing: 1px;
 }
 
 .hud p {
-    color: #b9d8e8;
-    font-size: 12px;
+    margin-top: 5px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #9fe8ff;
 }
 
 .controls {
     position: fixed;
-    bottom: 20px;
+    z-index: 10;
     left: 50%;
-    z-index: 5;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 9px;
-    width: 96%;
+    bottom: 18px;
     transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: calc(100% - 20px);
+    max-width: 500px;
 }
 
-button {
-    padding: 12px 14px;
+.controls button {
+    padding: 12px 13px;
     color: white;
-    font-size: 12px;
-    font-weight: bold;
-    background: rgba(13, 32, 44, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(13, 24, 43, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    backdrop-filter: blur(8px);
+    -webkit-tap-highlight-color: transparent;
 }
 
-button:hover {
-    background: #267f9c;
-    transform: translateY(-2px);
-}
-
-button:active {
-    transform: scale(0.96);
+.controls button:active {
+    transform: scale(0.94);
+    background: #1688d4;
 }
 
 #info {
-    position: fixed;
-    top: 18px;
-    right: 14px;
-    z-index: 5;
     display: none;
-    max-width: 160px;
-    padding: 14px;
+    position: fixed;
+    z-index: 10;
+    top: 100px;
+    left: 14px;
+    max-width: calc(100% - 28px);
+    padding: 14px 18px;
     color: white;
-    font-size: 13px;
-    line-height: 1.5;
-    background: rgba(16, 38, 51, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(10, 20, 35, 0.9);
+    border: 1px solid #75d5ff;
     border-radius: 12px;
+    font-size: 14px;
 }
 
 #loading {
     position: fixed;
+    z-index: 100;
     inset: 0;
-    z-index: 10;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    color: #173747;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: #101a36;
+    font-size: 18px;
     font-weight: bold;
-    text-align: center;
-    background: #9bcce5;
 }
 
-@media (max-width: 480px) {
-    .hud {
-        top: 10px;
-        left: 10px;
-        padding: 12px;
-    }
-
+@media (max-width: 420px) {
     .hud h2 {
-        font-size: 16px;
-    }
-
-    .hud p {
-        font-size: 10px;
+        font-size: 17px;
     }
 
     .controls {
-        bottom: 12px;
         gap: 6px;
+        bottom: 12px;
     }
 
-    button {
+    .controls button {
         padding: 11px 10px;
         font-size: 10px;
-    }
-
-    #info {
-        top: 90px;
-        right: 10px;
     }
 }
